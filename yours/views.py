@@ -91,13 +91,39 @@ class SearchView(ListView):
     paginate_by = 8
 
     def get_queryset(self):
-        query = self.request.GET.get('query', '') 
-        return Post.objects.filter(
-            is_sold=False
-        ).filter(
-            Q(title__contains=query) 
-            | Q(item_details__contains=query)
+        query = self.request.GET.get('query', '')
+        user = self.request.user
+        base_query = Post.objects.filter(is_sold=False).filter(
+            Q(title__icontains=query) | Q(item_details__icontains=query)
         )
+
+        # If user location is available, filter by distance
+        if user.is_authenticated and user.latitude and user.longitude:
+            user_location = (user.latitude, user.longitude)
+            radius = 5  # Radius in kilometers
+
+            # Filter posts by search query and distance from user location
+            posts_within_radius = []
+            for post in base_query:
+                if post.author.latitude and post.author.longitude:
+                    post_location = (post.author.latitude, post.author.longitude)
+                    distance = geodesic(user_location, post_location).kilometers
+                    if distance <= radius:
+                        post.distance = distance  # Attach distance to post for display
+                        posts_within_radius.append(post)
+
+            # Sort posts by distance
+            return sorted(posts_within_radius, key=lambda p: p.distance)
+
+        # Return all matching posts if no location is set
+        return base_query
+        # query = self.request.GET.get('query', '') 
+        # return Post.objects.filter(
+        #     is_sold=False
+        # ).filter(
+        #     Q(title__contains=query) 
+        #     | Q(item_details__contains=query)
+        # )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
