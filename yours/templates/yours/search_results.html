@@ -3,14 +3,17 @@
 {% load static %}
 
 {% block content %}
-<form class="search-form" action="{% url 'search' %}" method="get">
-    <input class="search-input" name="query" value={{ query }} type="text" placeholder="What are you looking for?" required>
+<div class="post-list search-results">
+  <form class="search-form" action="{% url 'search' %}" method="get">
+    <input class="search-input" name="query" value="{{ query }}" type="text" placeholder="What are you looking for?" required>
     <button class="yours-button darkpurple" type="submit">Go</button>
   </form>
   <div class="header">
     <h2><span class="query">{{ query }}</span> -> Search Results ({{ paginator.count }})</h2>
-  </div>  
-  {% include 'components/post_list.html' with posts=search_results empty_message="No Search Results :(" %}
+  </div>
+
+  {% include 'components/post_list.html' with posts=search_results empty_message="No Search Results within 5 km of your location :(" %}
+
   {% if is_paginated %}
     {% include 'components/pagination.html' with page_obj=page_obj %}
   {% endif %}
